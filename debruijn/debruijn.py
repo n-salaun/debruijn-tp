@@ -27,13 +27,13 @@ import textwrap
 import matplotlib.pyplot as plt
 matplotlib.use("Agg")
 
-__author__ = "Your Name"
+__author__ = "Nicolas Salaun"
 __copyright__ = "Universite Paris Diderot"
-__credits__ = ["Your Name"]
+__credits__ = ["Nicolas Salaun"]
 __license__ = "GPL"
 __version__ = "1.0.0"
-__maintainer__ = "Your Name"
-__email__ = "your@email.fr"
+__maintainer__ = "Nicolas Salaun"
+__email__ = "nicolas.salaun@orange.fr"
 __status__ = "Developpement"
 
 def isfile(path): # pragma: no cover
@@ -81,7 +81,12 @@ def read_fastq(fastq_file):
     :param fastq_file: (str) Path to the fastq file.
     :return: A generator object that iterate the read sequences. 
     """
-    pass
+    with open(fastq_file, "r") as fh:
+        for line in fh:
+            if line.startswith("@"):
+                yield next(fh).strip()
+
+
 
 
 def cut_kmer(read, kmer_size):
@@ -90,7 +95,7 @@ def cut_kmer(read, kmer_size):
     :param read: (str) Sequence of a read.
     :return: A generator object that iterate the kmers of of size kmer_size.
     """
-    pass
+    yield from (read[i:i+kmer_size] for i in range(len(read) - kmer_size + 1))
 
 
 def build_kmer_dict(fastq_file, kmer_size):
@@ -99,7 +104,18 @@ def build_kmer_dict(fastq_file, kmer_size):
     :param fastq_file: (str) Path to the fastq file.
     :return: A dictionnary object that identify all kmer occurrences.
     """
-    pass
+    kmer_dict = {}
+    fastq_sequence_string = []
+    for read in read_fastq(fastq_file):
+        fastq_sequence_string.append(read)
+    fastq_sequence_string = "".join(fastq_sequence_string)
+        
+    for kmer in cut_kmer(fastq_sequence_string, kmer_size):
+        if kmer in kmer_dict:
+            kmer_dict[kmer] += 1
+        else:
+            kmer_dict[kmer] = 1
+    return kmer_dict
 
 
 def build_graph(kmer_dict):
@@ -242,20 +258,12 @@ def draw_graph(graph, graphimg_file): # pragma: no cover
 #==============================================================
 # Main program
 #==============================================================
-def main(): # pragma: no cover
-    """
-    Main program function
-    """
-    # Get arguments
-    args = get_arguments()
-
-    # Fonctions de dessin du graphe
-    # A decommenter si vous souhaitez visualiser un petit 
-    # graphe
-    # Plot the graph
-    # if args.graphimg_file:
-    #     draw_graph(graph, args.graphimg_file)
 
 
 if __name__ == '__main__': # pragma: no cover
-    main()
+    args = get_arguments()
+    fastq_sequence_generator = read_fastq(args.fastq_file)
+
+
+    kmer_dict = build_kmer_dict(args.fastq_file, args.kmer_size)
+    print(kmer_dict)
