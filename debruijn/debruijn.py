@@ -203,7 +203,6 @@ def simplify_bubbles(graph):
         if len(predecessors) > 1:
             combinations = [(predecessors[i], predecessors[j]) for i in range(0, len(predecessors) - 1) for j in range(i + 1, len(predecessors)) if i != j]
             for combination in combinations:
-                print("here")
                 ancestor = nx.lowest_common_ancestor(graph, combination[0], combination[1])
                 if ancestor:
                     bubble = True
