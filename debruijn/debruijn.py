@@ -87,8 +87,6 @@ def read_fastq(fastq_file):
                 yield next(fh).strip()
 
 
-
-
 def cut_kmer(read, kmer_size):
     """Cut read into kmers of size kmer_size.
     
@@ -105,16 +103,12 @@ def build_kmer_dict(fastq_file, kmer_size):
     :return: A dictionnary object that identify all kmer occurrences.
     """
     kmer_dict = {}
-    fastq_sequence_string = []
     for read in read_fastq(fastq_file):
-        fastq_sequence_string.append(read)
-    fastq_sequence_string = "".join(fastq_sequence_string)
-        
-    for kmer in cut_kmer(fastq_sequence_string, kmer_size):
-        if kmer in kmer_dict:
-            kmer_dict[kmer] += 1
-        else:
-            kmer_dict[kmer] = 1
+        for kmer in cut_kmer(read, kmer_size):
+            if kmer in kmer_dict:
+                kmer_dict[kmer] += 1
+            else:
+                kmer_dict[kmer] = 1
     return kmer_dict
 
 
@@ -198,29 +192,36 @@ def simplify_bubbles(graph):
     """Detect and explode bubbles
 
     :param graph: (nx.DiGraph) A directed graph object
-    :return: (nx.DiGraph) A directed graph object
+    # :return: (nx.DiGraph) A directed graph object
     """
-def simplify_bubbles(graph):
-    """Detect and explode bubbles
-
-    :param graph: (nx.DiGraph) A directed graph object
-    :return: (nx.DiGraph) A directed graph object
-    """
+    # if not nx.is_directed_acyclic_graph(graph):
+    #     raise ValueError("Input graph is not a directed acyclic graph (DAG).")
+    
     bubble = False
     for node in graph.nodes():
         predecessors = list(graph.predecessors(node))
-        if len(predecessors)>1:
-            combinations = [(predecessors[i], predecessors[j]) for i in range(len(predecessors)-1) for j in range(i+1, len(predecessors)) if i != j]
+        if len(predecessors) > 1:
+            combinations = [(predecessors[i], predecessors[j]) for i in range(0, len(predecessors) - 1) for j in range(i + 1, len(predecessors)) if i != j]
             for combination in combinations:
+                print("here")
                 ancestor = nx.lowest_common_ancestor(graph, combination[0], combination[1])
                 if ancestor:
                     bubble = True
                     break
-        if bubble == True:
+        if bubble:
             break
+
     if bubble:
         graph = simplify_bubbles(solve_bubble(graph, ancestor, node))
     return graph
+
+# Usage example
+graph = nx.DiGraph()  # Create your directed graph here
+if nx.is_directed_acyclic_graph(graph):
+    graph = simplify_bubbles(graph)
+else:
+    print("The input graph is not a DAG. Please modify your graph or algorithm to make it a DAG.")
+
 
 def solve_entry_tips(graph, starting_nodes):
     """Remove entry tips and returns a graph without useless entry paths on the simplify bubble basis
@@ -344,9 +345,9 @@ if __name__ == '__main__': # pragma: no cover
     start_nodes = get_starting_nodes(graph)
     end_nodes = get_sink_nodes(graph)
     graph = simplify_bubbles(graph)
-    graph = solve_entry_tips(graph, start_nodes)
-    graph = solve_out_tips(graph, end_nodes)
-    contigs = get_contigs(graph, start_nodes, end_nodes)
+    graph = solve_entry_tips(graph, get_starting_nodes(graph))
+    graph = solve_out_tips(graph, get_sink_nodes(graph))
+    contigs = get_contigs(graph, get_starting_nodes(graph), get_sink_nodes(graph))
     save_contigs(contigs, args.output_file)
     if args.graphimg_file:
         draw_graph(graph, args.graphimg_file)
